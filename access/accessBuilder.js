@@ -28,12 +28,35 @@ const get = (collection, path, delimiter = '.') => {
   return value;
 };
 
+const getNestedEndValue = (newObject = {}, obj, type, delimiter) => {
+  const keys = Object.keys(obj);
+
+  keys.forEach((key) => {
+    const value = obj[key];
+
+    if (isUndefined(value)) newObject[key] = undefined;
+    else if (Array.isArray(value)) newObject[key] = value;
+    else if (isObject(value)) {
+      newObject[key] = getNestedEndValue({}, value, type, delimiter);
+    } else if (isString(value)) {
+      if (value.indexOf(delimiter) > -1) {
+        newObject[key] =  getNested(type, value);
+      } else {
+        newObject[key] = value;
+      }
+    }
+  });
+
+  return newObject;
+};
+
 const getNested = (type, path, delimiter = '.') => {
   const collection = getFromConfig(type);
   const code = get(collection, path, delimiter);
 
   if (isUndefined(code)) return undefined;
-  if (isObject(code)) return code;
+  if (Array.isArray(code)) return code;
+  if (isObject(code)) return getNestedEndValue({}, code, type, delimiter);
   if (isString(code)) {
     if (code.indexOf(delimiter) > -1) return getNested(type, code);
   }
